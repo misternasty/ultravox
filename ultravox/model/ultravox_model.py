@@ -10,6 +10,7 @@ import transformers
 import transformers.activations
 import transformers.modeling_outputs
 import transformers.models
+from transformers.generation.utils import GenerationMixin
 from transformers.models.whisper import modeling_whisper as whisper
 
 # We must use relative import in this directory to allow uploading to HF Hub
@@ -19,7 +20,7 @@ from .ultravox_config import LossFunction
 from .ultravox_config import UltravoxConfig
 
 
-class UltravoxModel(transformers.LlamaPreTrainedModel):
+class UltravoxModel(transformers.LlamaPreTrainedModel, GenerationMixin):
     """
     The Ultravox model which consists of an audio encoder and a language model.
 
@@ -288,9 +289,7 @@ class UltravoxModel(transformers.LlamaPreTrainedModel):
 
         # include audio information in model_input only when it is needed during prefilling
         # audio_token_start_idx should always be relative to the current cache position
-        prefill_start_idx: torch.Tensor = (
-            torch.tensor(0) if cache_position is None else cache_position[0]
-        )
+        prefill_start_idx = 0 if cache_position is None else cache_position[0]
         if (
             audio_values is not None
             and audio_token_start_idx is not None
@@ -704,7 +703,6 @@ class ModifiedWhisperEncoder(
             attention_mask = self.get_extended_attention_mask(
                 attention_mask,
                 None,
-                device=hidden_states.device,
                 dtype=hidden_states.dtype,
             )
 
